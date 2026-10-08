@@ -1,69 +1,89 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+
+export default function ContactPage() {
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatus("sending");
+
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Request failed");
+      form.reset();
+      setStatus("sent");
+    } catch {
+      setStatus("error");
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="wrap">
+      <h1>Contact us</h1>
+
+      <form onSubmit={handleSubmit}>
+        <div className="row">
+          <label>
+            First name
+            <input name="firstName" type="text" required autoComplete="given-name" />
+          </label>
+          <label>
+            Last name
+            <input name="lastName" type="text" required autoComplete="family-name" />
+          </label>
+        </div>
+
+        <label>
+          Email
+          <input name="email" type="email" required autoComplete="email" />
+        </label>
+
+        <label>
+          Company
+          <input name="company" type="text" autoComplete="organization" />
+        </label>
+
+        <label>
+          Message
+          <textarea name="message" rows={6} required />
+        </label>
+
+        <button type="submit" disabled={status === "sending"}>
+          {status === "sending" ? "Sending..." : "Send message"}
+        </button>
+
+        {status === "sent" && <p role="status">Message sent. We'll get back to you soon.</p>}
+        {status === "error" && (
+          <p role="alert" className="error">
+            Message not sent. Check your connection and try again.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+        )}
+      </form>
+
+      <style>{`
+        .wrap { max-width: 520px; margin: 4rem auto; padding: 0 1.25rem; font-family: system-ui, sans-serif; }
+        h1 { font-size: 2rem; margin: 0 0 1.5rem; }
+        form { display: flex; flex-direction: column; gap: 1rem; }
+        .row { display: flex; gap: 1rem; }
+        .row label { flex: 1; }
+        label { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; font-weight: 500; }
+        input, textarea { font: inherit; padding: 0.6rem 0.7rem; border: 1px solid #bbb; border-radius: 6px; }
+        input:focus, textarea:focus { outline: 2px solid #2563eb; outline-offset: 1px; border-color: #2563eb; }
+        textarea { resize: vertical; }
+        button { font: inherit; font-weight: 600; padding: 0.7rem 1rem; border: 0; border-radius: 6px; background: #111; color: #fff; cursor: pointer; }
+        button:disabled { opacity: 0.6; cursor: not-allowed; }
+        .error { color: #b91c1c; }
+        @media (max-width: 480px) { .row { flex-direction: column; } }
+      `}</style>
+    </main>
   );
 }
